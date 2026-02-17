@@ -33,6 +33,7 @@ Clone the repository
 git clone https//github.com/your-username/enterprise-ledger-system.git
 cd enterprise-ledger-system
 
+
 Run using Maven
 mvn spring-boot:run 
 Or build and run:
@@ -41,3 +42,67 @@ java -jar target/enterprise-ledger-system.jar
 
 the application will start on:
 http://localhost:8080 
+
+#Usage 
+Below are examples of how to interact with the enterprise-ledger systemonce the application is running locally
+curl http://localhost:8080
+ expected output:
+ {
+ "status":"Ledger system api is running"
+ }
+
+ Create a ledger Account
+
+ curl -X POST http://localhost:8080/api/account \
+ - H "Content-Type: application/json"\
+ - d '
+ "accountName":"Cash Account",
+ "accountType":"ASSET"
+
+ '
+ Expected response
+
+ {
+ "id":1,
+ "accountName":"Cash Account",
+ "accountType":"ASSET",
+ "balance":0.00
+ }
+
+ Record a transaction 
+
+ curl -X POST http://localhost:8080/api/transactions\
+ -H "Content-Type:application/json"
+ -d '{
+ "accountId":1,
+ "type":"DEBIT",
+ "amount":500.00,
+ "description":"Initial depost*
+ }'
+
+ Expected Response:
+ {
+ "id":1,
+ "accountId":1,
+ "type":"DEBIT",
+ "description":"Initial deposit",
+ }
+
+ Check account Balance
+
+ curl http://localhost:8080/api/accounts/1
+
+ Expected Response:
+
+  {
+ "id":1,
+ "accountName":"Cash Account",
+ "accountType":"ASSET",
+ "balance":500.00,
+ }
+
+ Contact Information 
+ **Author:** Haile Kesekwa
+ **GitHub:** https://github.com/hailekesekwa
+ **Email:** juliustelta@gmail 
+ 
