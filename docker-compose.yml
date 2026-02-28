@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # 1. The Database Layer (Microsoft SQL Server)
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    entrypoint: >
+      bash -c "
+      /opt/mssql/bin/sqlservr &
+      sleep 30s;
+      /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Hakeju$9779' -Q 'IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = \"enterprise-ledger-system\") CREATE DATABASE [enterprise-ledger-system]' -C;
+      wait"
+    container_name: ledger-db-mss
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Hakeju$$9779" # MS SQL requires complex passwords
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    networks:
+      - enterprise-net
+
+  # 2. The Caching Layer (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: ledger-cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - enterprise-net
+
+  # 3. The Backend Engine (Spring Boot)
+  backend:
+    build: 
+      context: ./enterprise-ledger-system 
+      dockerfile: Dockerfile
+    container_name: ledger-api
+    restart: on-failure
+    depends_on:
+      - mssql
+      - redis
+    environment:
+      # We inject the exact MS SQL URL so Spring Boot looks for the "mssql" container, not localhost
+      - SPRING_DATASOURCE_URL=jdbc:sqlserver://mssql:1433;databaseName=enterprise-ledger-system;encrypt=true;trustServerCertificate=true;
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=Hakeju$$9779
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATASOURCE_URL=jdbc:sqlserver://mssql:1433;databaseName=enterprise-ledger-system;encrypt=true;trustServerCertificate=true;createDatabaseIfNotExist=true
+    ports:
+      - "8091:8091" # Updated to match your application.properties server.port
+    networks:
+      - enterprise-net
+
+  # 4. The Frontend Dashboard (Vue.js)
+  frontend:
+    build:
+      context: ./enterprise-ledger-ui
+      dockerfile: Dockerfile
+    container_name: ledger-ui
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80" 
+    networks:
+      - enterprise-net
+
+volumes:
+  mssql_data:
+  redis_data:
+
+networks:
+  enterprise-net:
+    driver: bridge
