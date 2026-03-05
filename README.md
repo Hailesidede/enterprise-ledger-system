@@ -45,7 +45,7 @@ http://localhost:8080
 
 #Usage 
 Below are examples of how to interact with the enterprise-ledger systemonce the application is running locally
-curl http://localhost:8080
+curl http://localhost:8091
  expected output:
  {
  "status":"Ledger system api is running"
@@ -53,7 +53,7 @@ curl http://localhost:8080
 
  Create a ledger Account
 
- curl -X POST http://localhost:8080/api/account \
+ curl -X POST /api/account \
  - H "Content-Type: application/json"\
  - d '
  "accountName":"Cash Account",
